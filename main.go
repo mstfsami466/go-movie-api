@@ -4,17 +4,20 @@ import (
 	"fmt"
 	"go_movie_api/handlers"
 	"net/http"
+	"os"
 )
 
 func main() {
 	http.HandleFunc("/", handlers.HomeHandler)
-	http.HandleFunc("/filmler", handlers.MoviesHandler)
-	http.HandleFunc("/kategoriler", handlers.CategoriesHandler)
-	http.HandleFunc("/film", handlers.MovieDetailHandler)
+	http.HandleFunc("/movies", handlers.MoviesHandler)
+	http.HandleFunc("/categories", handlers.CategoriesHandler)
+	http.HandleFunc("/movie", handlers.MovieDetailHandler)
 
-	fmt.Println("Film api çalışıyor...")
-	fmt.Println("http://localhost:8080 adresine giderek api'ye erişebilirsiniz.")
-	http.ListenAndServe(":8080", nil)
-	
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
+	fmt.Println("Film API çalışıyor. Port:", port)
+	http.ListenAndServe(":"+port, nil)
 }
