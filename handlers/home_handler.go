@@ -1,11 +1,13 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
-func HomeHandler(w http.ResponseWriter, r *http.Request){
-	fmt.Fprint(w, "Film API'ye hoş geldiniz !")
-
+func HomeHandler(c *gin.Context){
+	c.JSON(http.StatusOK, gin.H{
+		"message" : "Film Api'ye Hoş Geldiniz",
+		"status" : "success",
+	})
 }

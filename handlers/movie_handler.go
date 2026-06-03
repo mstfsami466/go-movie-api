@@ -1,53 +1,121 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"go_movie_api/data"
+	"go_movie_api/models"
 	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
-func MoviesHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func MoviesHandler(c *gin.Context) {
 	if len(data.Movies) == 0 {
-		http.Error(w, "No movies found", http.StatusNotFound)
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "Film bulunamadı",
+		})
 		return
 	}
-	err := json.NewEncoder(w).Encode(data.Movies)
-	if err != nil {
-		http.Error(w, "Error encoding movies data", http.StatusInternalServerError)
-		return
-	}
+
+	c.JSON(http.StatusOK, data.Movies)
 }
 
-func CategoriesHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 
-	if len(data.Categories) == 0 {
-		http.Error(w, "No categories found", http.StatusNotFound)
+func CategoriesHandler(c *gin.Context){
+	if len(data.Categories) == 0{
+		c.JSON(http.StatusNotFound, gin.H{
+			"message" : "Kategori bulunamadı",
+		})
+
 		return
 	}
-
-	err := json.NewEncoder(w).Encode(data.Categories)
-	if err != nil {
-		http.Error(w, "Error encoding categories data", http.StatusInternalServerError)
-		return
-	}
+	c.JSON(http.StatusOK, data.Categories)
 }
 
-func MovieDetailHandler(w http.ResponseWriter, r *http.Request){
-	w.Header().Set("Content-Type", "application/json")
-
-	id := r.URL.Query().Get("id")
+func MovieDetailHandler(c *gin.Context){
+	id := c.Param("id")
 
 	for _, movie := range data.Movies{
 		if fmt.Sprint(movie.ID) == id{
-			json.NewEncoder(w).Encode(movie)
+			c.JSON(http.StatusOK, movie)
 			return
 		}
 	}
-	http.Error(w, "Film bulunamadı", http.StatusNotFound)
-	
+	c.JSON(http.StatusNotFound, gin.H{
+		"message" : "Film bulunmadi",
+	})
+
+}
+
+func MovieDetailQueryHandler(c *gin.Context){
+	id := c.Query("id")
+
+	if id == ""{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message" : "Film id değeri gönderilmedi",
+		})
+		return
+	}
+
+	for _, movie := range data.Movies{
+		if fmt.Sprint(movie.ID) == id{
+			c.JSON(http.StatusOK, movie)
+			return
+		}
+	}
+	c.JSON(http.StatusNotFound, gin.H{
+		"message" : "Film bulunamadi",
+	})
+}
+
+func MoviesByCategoryHandler(c * gin.Context){
+	category := c.Param("category")
+	var filteredMovies []models.Movie
+
+	for _, movie := range data.Movies{
+		// Büyük/küçük harf duyarsız karşılaştırma yaparak kategoriyi kontrol ediyoruz
+		if strings.EqualFold(movie.Category, category){
+			filteredMovies = append(filteredMovies, movie)
+		}
+	}
+
+	if len(filteredMovies) == 0{
+		c.JSON(http.StatusNotFound, gin.H{
+			"message" : "Bu kategoriye ait film bulunamadi",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, filteredMovies)
+}
+
+func SearchMoviesHandler(c * gin.Context){
+	title := c.Query("title")
+
+	if title == ""{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message" : "Arama yapmak için bir başlık değeri gönderilmelidir",
+		})
+		return
+	}
+
+	var filteredMovies []models.Movie
+
+	for _, movie := range data.Movies{
+		// Büyük/küçük harf duyarsız karşılaştırma yaparak başlıkta arama yapıyoruz
+		if strings.Contains(strings.ToLower(movie.Title), strings.ToLower(title)){
+			filteredMovies = append(filteredMovies, movie)
+		}
+		
+	}
+
+	if len(filteredMovies) == 0{
+		c.JSON(http.StatusNotFound, gin.H{
+			"message" : "Aranan filme ait sonuç bulunmadı",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, filteredMovies)
+
 }
 
